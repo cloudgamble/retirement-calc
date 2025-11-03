@@ -1,0 +1,52 @@
+{
+  "comment": "Copy this file to affiliate-config.json and fill in your actual codes/IDs",
+  "adsense": {
+    "clientId": "ca-pub-XXXXXXXXXXXXXXXX",
+    "adSlots": {
+      "sidebar": "XXXXXXXXXX",
+      "footer": "XXXXXXXXXX",
+      "results": "XXXXXXXXXX"
+    }
+  },
+  "cj": {
+    "publisherId": "YOUR_CJ_PUBLISHER_ID",
+    "partners": {
+      "empower": {
+        "advertiserId": "XXXXX",
+        "linkUrl": "https://cj.dotomi.com/...",
+        "commission": "$50-150 per qualified lead"
+      },
+      "betterment": {
+        "advertiserId": "XXXXX",
+        "linkUrl": "https://cj.dotomi.com/...",
+        "commission": "$100-200 per funded account"
+      },
+      "wealthfront": {
+        "advertiserId": "XXXXX",
+        "linkUrl": "https://cj.dotomi.com/...",
+        "commission": "$100-200 per funded account"
+      }
+    }
+  },
+  "amazon": {
+    "associateId": "YOUR_AMAZON_ASSOCIATE_TAG",
+    "books": {
+      "simplePathToWealth": {
+        "asin": "B01H97OQY2",
+        "affiliateLink": "https://amzn.to/YOUR-LINK"
+      },
+      "earlyRetirementExtreme": {
+        "asin": "145360121X",
+        "affiliateLink": "https://amzn.to/YOUR-LINK"
+      },
+      "yourMoneyOrYourLife": {
+        "asin": "0143115766",
+        "affiliateLink": "https://amzn.to/YOUR-LINK"
+      }
+    }
+  },
+  "analytics": {
+    "googleAnalyticsId": "G-XXXXXXXXXX",
+    "cloudflareAnalyticsToken": "YOUR_CF_TOKEN"
+  }
+}

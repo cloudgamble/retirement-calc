@@ -28,6 +28,12 @@ dist-ssr
 .env.local
 .env.*.local
 
+# Monetization (keep private)
+MONETIZATION.md
+affiliate-config.json
+affiliate-links.md
+revenue-tracking.md
+
 # Build
 build
 .turbo
