@@ -1,7 +1,19 @@
 import { useState } from 'react';
-import { calculateRetirement, applyConservativeMode, formatCurrency, formatPercent, type RetirementInputs } from '../lib/calculator';
+import { 
+  calculateRetirement, 
+  applyConservativeMode, 
+  calculateCoastFIRE,
+  calculateStopSavingAge,
+  generateStressTestScenarios,
+  formatCurrency, 
+  formatPercent, 
+  type RetirementInputs 
+} from '../lib/calculator';
 import { BalanceChart } from './BalanceChart';
 import { ExportButtons } from './ExportButtons';
+import { CoastFIRECard } from './CoastFIRECard';
+import { StopSavingAnalysis } from './StopSavingAnalysis';
+import { StressTestView } from './StressTestView';
 
 export function Calculator() {
   const [inputs, setInputs] = useState<RetirementInputs>({
@@ -20,6 +32,11 @@ export function Calculator() {
 
   const effectiveInputs = conservativeMode ? applyConservativeMode(inputs) : inputs;
   const results = calculateRetirement(effectiveInputs);
+  
+  // Calculate Phase 1 advanced features
+  const coastFire = calculateCoastFIRE(effectiveInputs);
+  const stopSavingAge = calculateStopSavingAge(effectiveInputs);
+  const stressTest = generateStressTestScenarios(effectiveInputs);
 
   const handleInputChange = (field: keyof RetirementInputs, value: number) => {
     setInputs(prev => ({ ...prev, [field]: value }));
@@ -268,6 +285,17 @@ export function Calculator() {
               <h3 className="text-lg font-semibold text-gray-800 mb-4">Balance Over Time</h3>
               <BalanceChart projections={results.projections} retirementAge={effectiveInputs.retirementAge} />
             </div>
+
+            {/* Phase 1 Advanced Features */}
+            <CoastFIRECard coastFire={coastFire} />
+            
+            <StopSavingAnalysis 
+              stopSavingAge={stopSavingAge} 
+              currentAge={effectiveInputs.currentAge}
+              retirementAge={effectiveInputs.retirementAge}
+            />
+            
+            <StressTestView scenarios={stressTest} />
 
             {/* Export Buttons */}
             <ExportButtons inputs={effectiveInputs} results={results} />

@@ -178,3 +178,104 @@ export function formatCurrency(amount: number): string {
 export function formatPercent(value: number): string {
   return `${value.toFixed(1)}%`;
 }
+
+/**
+ * Coast FIRE calculation result
+ */
+export interface CoastFIREResult {
+  fireNumber: number;
+  coastNumber: number;
+  currentSavings: number;
+  gap: number;
+  isCoasting: boolean;
+  percentToCoast: number;
+}
+
+/**
+ * Calculate Coast FIRE status
+ * Shows if current savings can "coast" to retirement goal without further contributions
+ */
+export function calculateCoastFIRE(inputs: RetirementInputs): CoastFIREResult {
+  const yearsToRetirement = inputs.retirementAge - inputs.currentAge;
+  const fireNumber = inputs.annualSpending / 0.04; // 4% rule
+  const coastNumber = fireNumber / Math.pow(1 + inputs.rateOfReturn / 100, yearsToRetirement);
+  
+  const gap = coastNumber - inputs.currentSavings;
+  const isCoasting = inputs.currentSavings >= coastNumber;
+  const percentToCoast = (inputs.currentSavings / coastNumber) * 100;
+
+  return {
+    fireNumber,
+    coastNumber,
+    currentSavings: inputs.currentSavings,
+    gap,
+    isCoasting,
+    percentToCoast,
+  };
+}
+
+/**
+ * Calculate the earliest age user can stop saving and still reach retirement goal
+ */
+export function calculateStopSavingAge(inputs: RetirementInputs): number | null {
+  // Helper to project balance to a specific age
+  const projectBalanceToAge = (targetAge: number): number => {
+    let balance = inputs.currentSavings;
+    for (let age = inputs.currentAge; age < targetAge; age++) {
+      balance += inputs.annualContribution;
+      balance *= (1 + inputs.rateOfReturn / 100);
+    }
+    return balance;
+  };
+
+  // Test each potential stop age
+  for (let stopAge = inputs.currentAge; stopAge <= inputs.retirementAge; stopAge++) {
+    const balanceAtStopAge = projectBalanceToAge(stopAge);
+    
+    // Create test scenario: stop contributing at this age
+    const testInputs: RetirementInputs = {
+      ...inputs,
+      currentAge: stopAge,
+      currentSavings: balanceAtStopAge,
+      annualContribution: 0, // Stop contributions
+    };
+    
+    const results = calculateRetirement(testInputs);
+    
+    if (results.summary.retirementGoalReached) {
+      return stopAge;
+    }
+  }
+  
+  return null; // Can't stop saving yet
+}
+
+/**
+ * Stress test scenario results
+ */
+export interface StressTestScenarios {
+  worstCase: RetirementResults;
+  baseCase: RetirementResults;
+  bestCase: RetirementResults;
+}
+
+/**
+ * Generate stress test scenarios (worst/base/best case)
+ */
+export function generateStressTestScenarios(inputs: RetirementInputs): StressTestScenarios {
+  return {
+    worstCase: calculateRetirement({
+      ...inputs,
+      rateOfReturn: 4,
+      inflationRate: 5,
+      lifeExpectancy: 95,
+      annualSpending: inputs.annualSpending * 1.1, // 10% higher spending
+    }),
+    baseCase: calculateRetirement(inputs),
+    bestCase: calculateRetirement({
+      ...inputs,
+      rateOfReturn: 10,
+      inflationRate: 2,
+    }),
+  };
+}

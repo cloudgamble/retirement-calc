@@ -4,6 +4,9 @@ import {
   applyConservativeMode,
   formatCurrency,
   formatPercent,
+  calculateCoastFIRE,
+  calculateStopSavingAge,
+  generateStressTestScenarios,
   type RetirementInputs,
 } from './calculator';
 
@@ -197,5 +200,169 @@ describe('formatPercent', () => {
     expect(formatPercent(7)).toBe('7.0%');
     expect(formatPercent(7.5)).toBe('7.5%');
     expect(formatPercent(10.123)).toBe('10.1%');
+  });
+});
+
+describe('calculateCoastFIRE', () => {
+  it('should calculate coast FIRE correctly when already coasting', () => {
+    const inputs: RetirementInputs = {
+      currentAge: 30,
+      retirementAge: 65,
+      currentSavings: 500000,
+      annualContribution: 10000,
+      rateOfReturn: 7,
+      annualSpending: 50000,
+      inflationRate: 3,
+      lifeExpectancy: 90,
+    };
+
+    const result = calculateCoastFIRE(inputs);
+
+    expect(result.fireNumber).toBe(1250000); // $50k / 0.04
+    expect(result.isCoasting).toBe(true);
+    expect(result.gap).toBeLessThan(0); // Negative gap = coasting
+    expect(result.percentToCoast).toBeGreaterThan(100);
+  });
+
+  it('should calculate gap when not coasting yet', () => {
+    const inputs: RetirementInputs = {
+      currentAge: 25,
+      retirementAge: 65,
+      currentSavings: 50000,
+      annualContribution: 10000,
+      rateOfReturn: 7,
+      annualSpending: 50000,
+      inflationRate: 3,
+      lifeExpectancy: 90,
+    };
+
+    const result = calculateCoastFIRE(inputs);
+
+    expect(result.isCoasting).toBe(false);
+    expect(result.gap).toBeGreaterThan(0); // Positive gap = not coasting
+    expect(result.percentToCoast).toBeLessThan(100);
+  });
+
+  it('should calculate percent to coast correctly', () => {
+    const inputs: RetirementInputs = {
+      currentAge: 30,
+      retirementAge: 65,
+      currentSavings: 100000,
+      annualContribution: 10000,
+      rateOfReturn: 7,
+      annualSpending: 50000,
+      inflationRate: 3,
+      lifeExpectancy: 90,
+    };
+
+    const result = calculateCoastFIRE(inputs);
+
+    // Should be between 0-100% since we're not coasting yet
+    expect(result.percentToCoast).toBeGreaterThan(0);
+    expect(result.percentToCoast).toBeLessThan(200); // Reasonable upper bound
+  });
+});
+
+describe('calculateStopSavingAge', () => {
+  it('should find earliest age to stop saving', () => {
+    const inputs: RetirementInputs = {
+      currentAge: 30,
+      retirementAge: 65,
+      currentSavings: 100000,
+      annualContribution: 20000,
+      rateOfReturn: 7,
+      annualSpending: 50000,
+      inflationRate: 3,
+      lifeExpectancy: 90,
+    };
+
+    const stopAge = calculateStopSavingAge(inputs);
+
+    expect(stopAge).not.toBeNull();
+    expect(stopAge).toBeGreaterThanOrEqual(inputs.currentAge);
+    expect(stopAge).toBeLessThan(inputs.retirementAge);
+  });
+
+  it('should return null if cannot stop saving', () => {
+    const inputs: RetirementInputs = {
+      currentAge: 30,
+      retirementAge: 65,
+      currentSavings: 10000,
+      annualContribution: 5000,
+      rateOfReturn: 3,
+      annualSpending: 80000,
+      inflationRate: 3,
+      lifeExpectancy: 90,
+    };
+
+    const stopAge = calculateStopSavingAge(inputs);
+
+    expect(stopAge).toBeNull();
+  });
+
+  it('should return current age if already coasting', () => {
+    const inputs: RetirementInputs = {
+      currentAge: 30,
+      retirementAge: 65,
+      currentSavings: 500000,
+      annualContribution: 10000,
+      rateOfReturn: 7,
+      annualSpending: 40000,
+      inflationRate: 3,
+      lifeExpectancy: 90,
+    };
+
+    const stopAge = calculateStopSavingAge(inputs);
+
+    expect(stopAge).toBe(inputs.currentAge);
+  });
+});
+
+describe('generateStressTestScenarios', () => {
+  it('should generate three scenarios with different assumptions', () => {
+    const inputs: RetirementInputs = {
+      currentAge: 30,
+      retirementAge: 65,
+      currentSavings: 100000,
+      annualContribution: 15000,
+      rateOfReturn: 7,
+      annualSpending: 50000,
+      inflationRate: 3,
+      lifeExpectancy: 90,
+    };
+
+    const scenarios = generateStressTestScenarios(inputs);
+
+    expect(scenarios.worstCase).toBeDefined();
+    expect(scenarios.baseCase).toBeDefined();
+    expect(scenarios.bestCase).toBeDefined();
+
+    // Worst case should have lower final balance
+    expect(scenarios.worstCase.summary.finalBalance).toBeLessThan(
+      scenarios.baseCase.summary.finalBalance
+    );
+
+    // Best case should have higher final balance
+    expect(scenarios.bestCase.summary.finalBalance).toBeGreaterThan(
+      scenarios.baseCase.summary.finalBalance
+    );
+  });
+
+  it('should use correct assumptions for worst case', () => {
+    const inputs: RetirementInputs = {
+      currentAge: 30,
+      retirementAge: 65,
+      currentSavings: 100000,
+      annualContribution: 15000,
+      rateOfReturn: 7,
+      annualSpending: 50000,
+      inflationRate: 3,
+      lifeExpectancy: 90,
+    };
+
+    const scenarios = generateStressTestScenarios(inputs);
+
+    // Worst case planning to age 95
+    expect(scenarios.worstCase.projections[scenarios.worstCase.projections.length - 1].age).toBe(95);
   });
 });
